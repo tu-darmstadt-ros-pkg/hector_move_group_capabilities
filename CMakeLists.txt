@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(hector_move_group_plugins)
+project(hector_move_group_capabilities)
 
 
 find_package(catkin REQUIRED COMPONENTS
@@ -28,7 +28,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-add_library(hector_move_group_plugins
+add_library(hector_move_group_capabilities
   #src/continuous_replanning_capability.cpp
   #src/manipulation_action_capability.cpp
   src/octomap_raycast_capability.cpp
@@ -36,11 +36,11 @@ add_library(hector_move_group_plugins
   #src/robot_state_retrieval_capability.cpp
   )
 
-target_link_libraries(hector_move_group_plugins ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(hector_move_group_capabilities ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-add_dependencies(hector_move_group_plugins ${catkin_EXPORTED_TARGETS})
+add_dependencies(hector_move_group_capabilities ${catkin_EXPORTED_TARGETS})
 
-install(TARGETS hector_move_group_plugins
+install(TARGETS hector_move_group_capabilities
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})

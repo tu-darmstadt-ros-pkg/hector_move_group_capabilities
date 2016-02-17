@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>hector_move_group_plugins</name>
+  <name>hector_move_group_capabilities</name>
   <version>0.0.0</version>
   <description>The hector_move_group_plugins package</description>
 

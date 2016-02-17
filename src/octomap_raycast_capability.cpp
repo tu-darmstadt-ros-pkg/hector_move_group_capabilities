@@ -74,17 +74,16 @@ void move_group::OctomapRaycastCapability::serviceThread(){
 bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs::GetDistanceToObstacle::Request  &req,
                                                                  hector_nav_msgs::GetDistanceToObstacle::Response &res )
 {
-  //if (!map_ptr_){
-    //ROS_INFO("map_server has no map yet, no lookup service available");
-    //return false;
-    //}
+
     ROS_DEBUG("Octomap distance lookup service called");
     tf::StampedTransform camera_transform;
-    //boost::mutex::scoped_lock octo_lock(octomap_mutex_);
+
+    const std::string& target_frame = context_->planning_scene_monitor_->getPlanningScene()->getPlanningFrame();
+
     try{
         bool useOutliers = true;
-        tf_->waitForTransform("map",req.point.header.frame_id, req.point.header.stamp, ros::Duration(1.0));
-        tf_->lookupTransform("map", req.point.header.frame_id, req.point.header.stamp, camera_transform);
+        tf_->waitForTransform(target_frame ,req.point.header.frame_id, req.point.header.stamp, ros::Duration(1.0));
+        tf_->lookupTransform(target_frame, req.point.header.frame_id, req.point.header.stamp, camera_transform);
 
         const octomap::point3d origin = octomap::pointTfToOctomap(camera_transform.getOrigin());
 
@@ -108,7 +107,6 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
         const shapes::OcTree* octree_shape = static_cast<const shapes::OcTree*>(map->shapes_[0].get());
         const boost::shared_ptr<const octomap::OcTree> octree_ = octree_shape->octree;
 
-        //if(octree_->castRayMinusOne(origin,directions[0],endPoints[0],true,5.0)) {
         if(octree_->castRay(origin,directions[0],endPoints[0],true,5.0)) {
             distances.push_back(origin.distance(endPoints[0]));
         }else{
@@ -130,46 +128,11 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
                     }
                 }
                 ROS_DEBUG("corner case: number of outliners: %d ",count_outliers);
-            } else {
-                //@TODO: Below not used, can be removed.
-                /*
-                Eigen::MatrixXf X;
-                X.resize(endPoints.size(),2);
-                Eigen::MatrixXf Y;
-                Y.resize(endPoints.size(),1);
-                Eigen::MatrixXf W=Eigen::MatrixXf::Zero(endPoints.size(),endPoints.size());
-                int i = 0;
-                for (std::vector<octomap::point3d>::const_iterator itr = endPoints.begin(); itr != endPoints.end(); itr++, i++) {
-                    X(i,0) = itr->x();
-                    X(i,1) = 1;
-                    Y(i,0) = itr->y();
-                    W(i,i) = 1;
-                    if (i==(n)){
-                        W(i,i) = 1000;
-                    }
-                }
-
-                Eigen::Vector2f theta;
-                //theta=(X.transpose()*W*X).inverse()*X.transpose()*W*Y;
-                theta=((X.transpose()*W*X) + (Eigen::Matrix2f::Identity()*0.0001)).colPivHouseholderQr().solve(X.transpose()*W*Y);
-                Eigen::MatrixXf P;
-                P.resize(endPoints.size(),2);
-                P=X*theta;
-
-                float mse = ((Y-P).array().pow(2)).sum() / endPoints.size();
-                //ROS_INFO_STREAM( "theta " << theta );
-                //ROS_INFO_STREAM( "theta good ? " << (X.transpose()*W*Y).isApprox(X.transpose()*W*X * theta, 1e-3));
-                //ROS_INFO_STREAM( "X " << X );
-                //ROS_INFO_STREAM( "Y " << Y );
-                //ROS_INFO_STREAM( "W " << W );
-                //ROS_INFO_STREAM("Matrix vor inv" << X.transpose()*W*X);
-                //ROS_ERROR("mse %f  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",mse);
-                */
             }
 
             res.distance = distances[0];
 
-            res.end_point.header.frame_id = "map";
+            res.end_point.header.frame_id = target_frame;
             res.end_point.header.stamp = req.point.header.stamp;
             res.end_point.point.x = endPoints[0].x();
             res.end_point.point.y = endPoints[0].y();
@@ -198,7 +161,7 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
             visualization_msgs::MarkerArray marker_array;
             visualization_msgs::Marker marker;
             marker.header.stamp = req.point.header.stamp;
-            marker.header.frame_id = "/map";
+            marker.header.frame_id = target_frame;
             marker.type = visualization_msgs::Marker::LINE_LIST;
             marker.action = visualization_msgs::Marker::ADD;
             marker.color.r= 1.0;

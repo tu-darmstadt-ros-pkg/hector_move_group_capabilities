@@ -78,6 +78,7 @@ private:
   boost::shared_ptr<tf::Transformer> tf_;
 
   double octo_min_distance_;
+  std::string target_frame_;
 
 //  bool clearOctomap(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
 
