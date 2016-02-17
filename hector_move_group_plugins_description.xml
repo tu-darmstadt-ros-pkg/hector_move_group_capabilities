@@ -1,0 +1,17 @@
+<library path="libhector_move_group_plugins">
+
+  <class name="move_group/OctomapAccessCapability" type="move_group::OctomapRaycastCapability" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Provides API for raycasting into Octomap data of the planning scene
+    </description>
+  </class>  
+  
+  <!--
+  <class name="move_group/OctomapManagementCapability" type="move_group::OctomapManagementCapability" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Provides API for reseting and loading of Octomap data for planning scene
+    </description>
+  </class>
+  -->
+
+</library>
