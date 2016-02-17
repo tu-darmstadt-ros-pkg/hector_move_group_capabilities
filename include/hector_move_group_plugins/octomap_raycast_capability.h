@@ -38,7 +38,9 @@
 #define MOVEIT_MOVE_GROUP_OCTOMAP_ACCESS_CAPABILITY_
 
 #include <moveit/move_group/move_group_capability.h>
-#include <std_srvs/Empty.h>
+
+
+#include <hector_nav_msgs/GetDistanceToObstacle.h>
 
 namespace move_group
 {
@@ -52,10 +54,31 @@ public:
   virtual void initialize();
 
 private:
-  void visTimerCallback(const ros::TimerEvent& event);
+  void serviceThread();
+  bool lookupServiceCallback(hector_nav_msgs::GetDistanceToObstacle::Request  &req,
+                             hector_nav_msgs::GetDistanceToObstacle::Response &res );
+  void get_endpoints(std::vector<float>& distances,
+                     tf::Vector3 direction,
+                     std::vector<octomap::point3d>& directions,
+                     std::vector<octomap::point3d>& endPoints,
+                     const octomap::point3d origin,
+                     int n);
 
-  ros::Timer vis_timer_;
-  ros::Publisher octomap_full_pub_;
+  //void visTimerCallback(const ros::TimerEvent& event);
+
+  //ros::Timer vis_timer_;
+  //ros::Publisher octomap_full_pub_;
+
+  ros::ServiceServer dist_lookup_srv_server_;
+
+  ros::Publisher m_markerPub;
+
+  ros::CallbackQueue service_queue_;
+  boost::thread service_thread_;
+
+  boost::shared_ptr<tf::Transformer> tf_;
+
+  double octo_min_distance_;
 
 //  bool clearOctomap(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
 
