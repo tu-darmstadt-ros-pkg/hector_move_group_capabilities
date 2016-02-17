@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2014, SRI, Inc.
+ *  Copyright (c) 2014, Stefan Kohlbrecher, TU Darmstadt
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -14,7 +14,7 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *   * Neither the name of Willow Garage nor the names of its
+ *   * Neither the name of TU Darmstadt, nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
  *
@@ -86,8 +86,6 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
         tf_->waitForTransform("map",req.point.header.frame_id, req.point.header.stamp, ros::Duration(1.0));
         tf_->lookupTransform("map", req.point.header.frame_id, req.point.header.stamp, camera_transform);
 
-        //const OctomapContainer<OctomapType> map_ = octomap_->getCurrentMap();
-        //const OctomapType * octree_= map_.getOcTree();
         const octomap::point3d origin = octomap::pointTfToOctomap(camera_transform.getOrigin());
 
         tf::Point end_point = camera_transform * tf::Point(req.point.point.x, req.point.point.y, req.point.point.z);
@@ -113,13 +111,15 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
         //if(octree_->castRayMinusOne(origin,directions[0],endPoints[0],true,5.0)) {
         if(octree_->castRay(origin,directions[0],endPoints[0],true,5.0)) {
             distances.push_back(origin.distance(endPoints[0]));
+        }else{
+
         }
 
         if (distances.size()!=0) {
             int count_outliers;
             endPoints.resize(1+(n*2));
             // @TODO Note: distances not used anymore, has to be refactored.
-            get_endpoints(distances,direction,directions,endPoints,origin,n);
+            get_endpoints(origin, *octree_, distances[0], direction, directions, endPoints, n);
             if (useOutliers) {
                 double distance_threshold=0.7;
                 count_outliers=0;
@@ -170,7 +170,7 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
             res.distance = distances[0];
 
             res.end_point.header.frame_id = "map";
-            res.end_point.header.stamp = ros::Time::now();
+            res.end_point.header.stamp = req.point.header.stamp;
             res.end_point.point.x = endPoints[0].x();
             res.end_point.point.y = endPoints[0].y();
             res.end_point.point.z = endPoints[0].z();
@@ -231,21 +231,22 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
     return false;
 }
 
-void move_group::OctomapRaycastCapability::get_endpoints(std::vector<float>& distances,
-                                                         tf::Vector3 direction,
+void move_group::OctomapRaycastCapability::get_endpoints(const octomap::point3d& origin,
+                                                         const octomap::OcTree& octree,
+                                                         const float reference_distance,
+                                                         const tf::Vector3& direction,
                                                          std::vector<octomap::point3d>& directions,
                                                          std::vector<octomap::point3d>& endPoints,
-                                                         const octomap::point3d origin,
                                                          int n){
-    tf::Vector3 zAxis(0,0,1);
-    //const OctomapContainer<OctomapType> map_ = octomap_->getCurrentMap();
-    //const OctomapType * octree_= map_.getOcTree();
-    double toleranz=octree_->getResolution()*0.05;
-    for (int i=1;i<=n;i++){
-        double angle=std::atan2((octree_->getResolution()*i)+toleranz,distances[0]);
+    tf::Vector3 z_axis(0,0,1);
 
-        tf::Vector3 direction_z_plus = direction.rotate(zAxis, +angle);
-        tf::Vector3 direction_z_minus = direction.rotate(zAxis, -angle);
+    double tolerance=octree.getResolution()*0.05;
+
+    for (int i=1;i<=n;i++){
+        double angle=std::atan2((octree.getResolution()*i)+tolerance,reference_distance);
+
+        tf::Vector3 direction_z_plus = direction.rotate(z_axis, +angle);
+        tf::Vector3 direction_z_minus = direction.rotate(z_axis, -angle);
 
         const octomap::point3d direction_z_plus_Oc = octomap::pointTfToOctomap(direction_z_plus);
         const octomap::point3d direction_z_minus_Oc = octomap::pointTfToOctomap(direction_z_minus);
@@ -253,14 +254,8 @@ void move_group::OctomapRaycastCapability::get_endpoints(std::vector<float>& dis
         directions.push_back(direction_z_plus_Oc);
         directions.push_back(direction_z_minus_Oc);
 
-
-        if(octree_->castRay(origin,directions[2*i-1],endPoints[2*i-1],true,5.0)){
-            // distances.push_back(origin.distance(endPoints[2*i-1]));
-        }
-
-        if(octree_->castRay(origin,directions[2*i],endPoints[2*i],true,5.0)){
-            //distances.push_back(origin.distance(endPoints[2*i]));
-        }
+        octree.castRay(origin,directions[2*i-1],endPoints[2*i-1],true,5.0);
+        octree.castRay(origin,directions[2*i],endPoints[2*i],true,5.0);
 
     }
 }

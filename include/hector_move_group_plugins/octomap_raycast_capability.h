@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2014, SRI, Inc.
+ *  Copyright (c) 2014, Stefan Kohlbrecher, TU Darmstadt
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -14,7 +14,7 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *   * Neither the name of Willow Garage nor the names of its
+ *   * Neither the name of TU Darmstadt, nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
  *
@@ -32,10 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* Author: David Hershberger */
-
-#ifndef MOVEIT_MOVE_GROUP_OCTOMAP_ACCESS_CAPABILITY_
-#define MOVEIT_MOVE_GROUP_OCTOMAP_ACCESS_CAPABILITY_
+#ifndef MOVEIT_MOVE_GROUP_OCTOMAP_RAYCAST_CAPABILITY_
+#define MOVEIT_MOVE_GROUP_OCTOMAP_RAYCAST_CAPABILITY_
 
 #include <moveit/move_group/move_group_capability.h>
 
@@ -57,11 +55,12 @@ private:
   void serviceThread();
   bool lookupServiceCallback(hector_nav_msgs::GetDistanceToObstacle::Request  &req,
                              hector_nav_msgs::GetDistanceToObstacle::Response &res );
-  void get_endpoints(std::vector<float>& distances,
-                     tf::Vector3 direction,
+  void get_endpoints(const octomap::point3d& origin,
+                     const octomap::OcTree& octree,
+                     const float reference_distance,
+                     const tf::Vector3& direction,
                      std::vector<octomap::point3d>& directions,
                      std::vector<octomap::point3d>& endPoints,
-                     const octomap::point3d origin,
                      int n);
 
   //void visTimerCallback(const ros::TimerEvent& event);
@@ -87,4 +86,4 @@ private:
 
 }
 
-#endif // MOVEIT_MOVE_GROUP_CLEAR_OCTOMAP_SERVICE_CAPABILITY_
+#endif
