@@ -214,43 +214,5 @@ void move_group::OctomapRaycastCapability::get_endpoints(const octomap::point3d&
     }
 }
 
-/*
-void move_group::OctomapRaycastCapability::visTimerCallback(const ros::TimerEvent& event)
-{
-  if (octomap_full_pub_.getNumSubscribers() > 0){
-
-    moveit_msgs::PlanningScene tmp;
-    moveit_msgs::PlanningSceneComponents comp;
-    std::string octomap_frame_id;
-    comp.components = moveit_msgs::PlanningSceneComponents::OCTOMAP;
-
-    {
-      planning_scene_monitor::LockedPlanningSceneRO ls (context_->planning_scene_monitor_);
-      ls.getPlanningSceneMonitor()->getPlanningScene()->getPlanningSceneMsg(tmp, comp);
-      octomap_frame_id = ls.getPlanningSceneMonitor()->getPlanningScene()->getPlanningFrame();
-    }
-
-    tmp.world.octomap.octomap.header.frame_id = octomap_frame_id;
-
-    octomap_full_pub_.publish(tmp.world.octomap.octomap);
-  }
-}
-*/
-
-//bool move_group::OctomapAccessCapability::clearOctomap(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
-//{
-//  if (!context_->planning_scene_monitor_)
-//  {
-//    ROS_ERROR("Cannot clear octomap since planning_scene_monitor_ does not exist.");
-//    return true;
-//  }
-
-//  ROS_INFO("Clearing octomap...");
-//  context_->planning_scene_monitor_->clearOctomap();
-//  ROS_INFO("Octomap cleared.");
-//  return true;
-//}
-
-
 #include <class_loader/class_loader.h>
 CLASS_LOADER_REGISTER_CLASS(move_group::OctomapRaycastCapability, move_group::MoveGroupCapability)
