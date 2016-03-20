@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   tf
+  octomap_proc_common
+  cv_debug_provider
 )
 
 catkin_package(
@@ -34,7 +36,7 @@ add_library(hector_move_group_capabilities
   #src/continuous_replanning_capability.cpp
   #src/manipulation_action_capability.cpp
   src/octomap_raycast_capability.cpp
-  #src/octomap_management_capability.cpp
+  src/obstaclemap_capability.cpp
   #src/robot_state_retrieval_capability.cpp
   )
 

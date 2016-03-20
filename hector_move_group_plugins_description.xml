@@ -4,7 +4,14 @@
     <description>
       Provides API for raycasting into Octomap data of the planning scene
     </description>
-  </class>  
+  </class>
+
+  <class name="move_group/ObstaclemapCapability" type="move_group::ObstaclemapCapability" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Provides a capability that creates a obstacle map from octomap data
+    </description>
+  </class>
+
   
   <!--
   <class name="move_group/OctomapManagementCapability" type="move_group::OctomapManagementCapability" base_class_type="move_group::MoveGroupCapability">
