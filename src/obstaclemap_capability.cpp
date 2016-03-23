@@ -81,6 +81,12 @@ void move_group::ObstaclemapCapability::serviceThread(){
       // https://github.com/ros-planning/moveit_core/blob/jade-devel/planning_scene/src/planning_scene.cpp#L850
       // and quite hacky. There should be a better way to access the octomap (at least read-only)?
       collision_detection::CollisionWorld::ObjectConstPtr map = ls.getPlanningSceneMonitor()->getPlanningScene()->getWorld()->getObject("<octomap>");
+
+      if (!map.get()){
+        ROS_WARN_THROTTLE(5.0, "Map null pointer, aborting obstacle map generation!");
+        continue;
+      }
+
       const shapes::OcTree* octree_shape = static_cast<const shapes::OcTree*>(map->shapes_[0].get());
       const boost::shared_ptr<const octomap::OcTree> octree_ = octree_shape->octree;
 
@@ -92,9 +98,15 @@ void move_group::ObstaclemapCapability::serviceThread(){
     cv::Mat inpaint_lib;
     cv_image_convert::getInpaintedImage(cv_img, inpaint_lib, -0.5, 0.5);
 
+    debug_img_provider_->addDebugImage(inpaint_lib);
+
+    cv::Mat grad_mag_img;
+    cv_image_convert::getGradientMagnitudeImage(inpaint_lib,grad_mag_img);
+
+    debug_img_provider_->addDebugImage(grad_mag_img);
 
 
-
+    debug_img_provider_->publishDebugImage();
 
     rate.sleep();
   }
