@@ -110,7 +110,7 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
   const shapes::OcTree* octree_shape = static_cast<const shapes::OcTree*>(map->shapes_[0].get());
   const boost::shared_ptr<const octomap::OcTree> octree_ = octree_shape->octree;
 
-  if(octree_->castRay(origin,directions[0],endPoints[0],true,5.0)) {
+  if(octree_->castRay(origin,directions[0],endPoints[0],true,3.2)) {
     distances.push_back(origin.distance(endPoints[0]));
   }
 
