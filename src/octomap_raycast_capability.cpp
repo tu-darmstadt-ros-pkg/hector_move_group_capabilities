@@ -39,6 +39,8 @@
 #include <octomap/octomap.h>
 #include <octomap_ros/conversions.h>
 
+#include <angles/angles.h>
+
 move_group::OctomapRaycastCapability::OctomapRaycastCapability():
   MoveGroupCapability("OctomapRaycastCapability")
 {
@@ -46,9 +48,11 @@ move_group::OctomapRaycastCapability::OctomapRaycastCapability():
 
 void move_group::OctomapRaycastCapability::initialize()
 {
+  dyn_rec_server_.reset(new dynamic_reconfigure::Server<hector_move_group_capabilities::OctomapRaycastCapabilityConfig>(ros::NodeHandle("~/octomap_raycast_capability")));
+  dyn_rec_server_->setCallback(boost::bind(&move_group::OctomapRaycastCapability::dynRecParamCallback, this, _1, _2));
 
-  node_handle_.param("octomap_min_distance_to_obstacle", octo_min_distance_ ,0.05);
-  node_handle_.param("octomap_max_distance_to_obstacle", octo_max_distance_ ,3.5);
+  //node_handle_.param("octomap_min_distance_to_obstacle", octo_min_distance_ ,0.05);
+  //node_handle_.param("octomap_max_distance_to_obstacle", octo_max_distance_ ,3.5);
 
   ros::AdvertiseServiceOptions ops=ros::AdvertiseServiceOptions::create<hector_nav_msgs::GetDistanceToObstacle>("get_distance_to_obstacle", boost::bind(&move_group::OctomapRaycastCapability::lookupServiceCallback, this,_1,_2),ros::VoidConstPtr(),&service_queue_);
   dist_lookup_srv_server_ = node_handle_.advertiseService(ops);
@@ -67,6 +71,14 @@ void move_group::OctomapRaycastCapability::serviceThread(){
         service_queue_.callAvailable(ros::WallDuration(1.0));
         rate.sleep();
     }
+}
+
+void move_group::OctomapRaycastCapability::dynRecParamCallback(hector_move_group_capabilities::OctomapRaycastCapabilityConfig &config, uint32_t level)
+{
+  octo_min_distance_ = config.min_distance_to_obstacle;
+  octo_max_distance_ = config.max_distance_to_obstacle;
+  secondary_rays_max_dist_ = config.secondary_rays_max_dist;
+  secondary_rays_opening_angle_ = angles::from_degrees(config.secondary_rays_opening_angle_deg);
 }
 
 bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs::GetDistanceToObstacle::Request  &req,
@@ -199,7 +211,7 @@ void move_group::OctomapRaycastCapability::cast_ray_mod_direction(
 
   const octomap::point3d dir_mod_oc = octomap::pointTfToOctomap(dir_mod);
 
-  octree.castRay(origin, dir_mod_oc, end_point, true, 5.0);
+  octree.castRay(origin, dir_mod_oc, end_point, true, secondary_rays_max_dist_);
 }
 
 void move_group::OctomapRaycastCapability::get_endpoints(const octomap::point3d& origin,
@@ -210,10 +222,10 @@ void move_group::OctomapRaycastCapability::get_endpoints(const octomap::point3d&
                                                          std::vector<octomap::point3d>& endPoints,
                                                          int n){
 
-  cast_ray_mod_direction(origin, octree, direction,  0.0 , 0.1, endPoints[1]);
-  cast_ray_mod_direction(origin, octree, direction,  0.0 ,-0.1, endPoints[2]);
-  cast_ray_mod_direction(origin, octree, direction,  0.1 , 0.0, endPoints[3]);
-  cast_ray_mod_direction(origin, octree, direction, -0.1 , 0.0, endPoints[4]);
+  cast_ray_mod_direction(origin, octree, direction,  0.0 , secondary_rays_opening_angle_, endPoints[1]);
+  cast_ray_mod_direction(origin, octree, direction,  0.0 ,-secondary_rays_opening_angle_, endPoints[2]);
+  cast_ray_mod_direction(origin, octree, direction,  secondary_rays_opening_angle_ , 0.0, endPoints[3]);
+  cast_ray_mod_direction(origin, octree, direction, -secondary_rays_opening_angle_ , 0.0, endPoints[4]);
   /*
     tf::Vector3 z_axis(0,0,1);
 

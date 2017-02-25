@@ -15,7 +15,10 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   tf
+  dynamic_reconfigure
 )
+
+generate_dynamic_reconfigure_options(cfg/OctomapRaycastCapability.cfg)
 
 catkin_package(
   INCLUDE_DIRS include

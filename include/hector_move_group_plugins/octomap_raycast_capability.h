@@ -40,6 +40,9 @@
 
 #include <hector_nav_msgs/GetDistanceToObstacle.h>
 
+#include <dynamic_reconfigure/server.h>
+#include <hector_move_group_capabilities/OctomapRaycastCapabilityConfig.h>
+
 namespace move_group
 {
 
@@ -50,6 +53,8 @@ public:
   OctomapRaycastCapability();
 
   virtual void initialize();
+
+  void dynRecParamCallback(hector_move_group_capabilities::OctomapRaycastCapabilityConfig &config, uint32_t level);
 
 private:
   void serviceThread();
@@ -76,6 +81,8 @@ private:
 
   //ros::Timer vis_timer_;
   //ros::Publisher octomap_full_pub_;
+  boost::shared_ptr< dynamic_reconfigure::Server<hector_move_group_capabilities::OctomapRaycastCapabilityConfig> >dyn_rec_server_;
+
 
   ros::ServiceServer dist_lookup_srv_server_;
 
@@ -88,6 +95,9 @@ private:
 
   double octo_min_distance_;
   double octo_max_distance_;
+  double secondary_rays_max_dist_;
+  double secondary_rays_opening_angle_;
+
   std::string target_frame_;
 
 //  bool clearOctomap(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
