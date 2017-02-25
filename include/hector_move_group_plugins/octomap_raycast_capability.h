@@ -55,6 +55,15 @@ private:
   void serviceThread();
   bool lookupServiceCallback(hector_nav_msgs::GetDistanceToObstacle::Request  &req,
                              hector_nav_msgs::GetDistanceToObstacle::Response &res );
+
+  void cast_ray_mod_direction(
+                                              const octomap::point3d& origin,
+                                              const octomap::OcTree& octree,
+                                              const tf::Vector3& direction,
+                                              double pitch,
+                                              double yaw,
+                                              octomap::point3d& end_point);
+
   void get_endpoints(const octomap::point3d& origin,
                      const octomap::OcTree& octree,
                      const float reference_distance,
@@ -78,6 +87,7 @@ private:
   boost::shared_ptr<tf::Transformer> tf_;
 
   double octo_min_distance_;
+  double octo_max_distance_;
   std::string target_frame_;
 
 //  bool clearOctomap(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);

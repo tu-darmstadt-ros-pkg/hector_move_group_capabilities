@@ -48,6 +48,7 @@ void move_group::OctomapRaycastCapability::initialize()
 {
 
   node_handle_.param("octomap_min_distance_to_obstacle", octo_min_distance_ ,0.05);
+  node_handle_.param("octomap_max_distance_to_obstacle", octo_max_distance_ ,3.5);
 
   ros::AdvertiseServiceOptions ops=ros::AdvertiseServiceOptions::create<hector_nav_msgs::GetDistanceToObstacle>("get_distance_to_obstacle", boost::bind(&move_group::OctomapRaycastCapability::lookupServiceCallback, this,_1,_2),ros::VoidConstPtr(),&service_queue_);
   dist_lookup_srv_server_ = node_handle_.advertiseService(ops);
@@ -96,7 +97,7 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
   const octomap::point3d directionOc = octomap::pointTfToOctomap(direction);
   std::vector<octomap::point3d> endPoints;
   std::vector<float> distances;
-  int n=3;
+  int n=2;
   endPoints.resize(1);
   std::vector<octomap::point3d> directions;
   directions.push_back(directionOc);
@@ -110,7 +111,7 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
   const shapes::OcTree* octree_shape = static_cast<const shapes::OcTree*>(map->shapes_[0].get());
   const boost::shared_ptr<const octomap::OcTree> octree_ = octree_shape->octree;
 
-  if(octree_->castRay(origin,directions[0],endPoints[0],true,3.2)) {
+  if(octree_->castRay(origin,directions[0],endPoints[0],true,octo_max_distance_)) {
     distances.push_back(origin.distance(endPoints[0]));
   }
 
@@ -182,7 +183,23 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
   }
 
   return true;
+}
 
+void move_group::OctomapRaycastCapability::cast_ray_mod_direction(
+                                            const octomap::point3d& origin,
+                                            const octomap::OcTree& octree,
+                                            const tf::Vector3& direction,
+                                            double pitch,
+                                            double yaw,
+                                            octomap::point3d& end_point)
+{
+  tf::Vector3 dir_mod = direction;
+  dir_mod = dir_mod.rotate(tf::Vector3(0.0 ,0.0, 1.0), yaw);
+  dir_mod = dir_mod.rotate(tf::Vector3(0.0, 1.0 ,0.0), pitch);
+
+  const octomap::point3d dir_mod_oc = octomap::pointTfToOctomap(dir_mod);
+
+  octree.castRay(origin, dir_mod_oc, end_point, true, 5.0);
 }
 
 void move_group::OctomapRaycastCapability::get_endpoints(const octomap::point3d& origin,
@@ -192,6 +209,12 @@ void move_group::OctomapRaycastCapability::get_endpoints(const octomap::point3d&
                                                          std::vector<octomap::point3d>& directions,
                                                          std::vector<octomap::point3d>& endPoints,
                                                          int n){
+
+  cast_ray_mod_direction(origin, octree, direction,  0.0 , 0.1, endPoints[1]);
+  cast_ray_mod_direction(origin, octree, direction,  0.0 ,-0.1, endPoints[2]);
+  cast_ray_mod_direction(origin, octree, direction,  0.1 , 0.0, endPoints[3]);
+  cast_ray_mod_direction(origin, octree, direction, -0.1 , 0.0, endPoints[4]);
+  /*
     tf::Vector3 z_axis(0,0,1);
 
     double tolerance=octree.getResolution()*0.05;
@@ -212,6 +235,7 @@ void move_group::OctomapRaycastCapability::get_endpoints(const octomap::point3d&
         octree.castRay(origin,directions[2*i],endPoints[2*i],true,5.0);
 
     }
+    */
 }
 
 #include <class_loader/class_loader.h>
