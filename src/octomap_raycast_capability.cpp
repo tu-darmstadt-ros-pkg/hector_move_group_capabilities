@@ -121,7 +121,7 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
   // and quite hacky. There should be a better way to access the octomap (at least read-only)?
   collision_detection::CollisionWorld::ObjectConstPtr map = ls.getPlanningSceneMonitor()->getPlanningScene()->getWorld()->getObject("<octomap>");
   const shapes::OcTree* octree_shape = static_cast<const shapes::OcTree*>(map->shapes_[0].get());
-  const boost::shared_ptr<const octomap::OcTree> octree_ = octree_shape->octree;
+  const std::shared_ptr<const octomap::OcTree> octree_ = octree_shape->octree;
 
   if(octree_->castRay(origin,directions[0],endPoints[0],true,octo_max_distance_)) {
     distances.push_back(origin.distance(endPoints[0]));
