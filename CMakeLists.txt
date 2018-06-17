@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   hector_nav_msgs
   moveit_msgs
   moveit_ros_move_group
+  moveit_ros_perception
   octomap_msgs
   octomap_ros
   pluginlib
@@ -25,7 +26,7 @@ generate_dynamic_reconfigure_options(cfg/OctomapRaycastCapability.cfg)
 catkin_package(
   INCLUDE_DIRS include
 #  LIBRARIES vigir_move_group
-#  CATKIN_DEPENDS cmake_modules geometry_msgs moveit_msgs moveit_ros_move_group pluginlib roscpp
+  CATKIN_DEPENDS geometry_msgs moveit_msgs moveit_ros_move_group moveit_ros_perception pluginlib roscpp
 #  DEPENDS system_lib
 )
 
@@ -39,6 +40,7 @@ add_library(hector_move_group_capabilities
   #src/continuous_replanning_capability.cpp
   #src/manipulation_action_capability.cpp
   src/octomap_raycast_capability.cpp
+  src/lazy_pointcloud_octomap_updater.cpp
   #src/octomap_management_capability.cpp
   #src/robot_state_retrieval_capability.cpp
   )

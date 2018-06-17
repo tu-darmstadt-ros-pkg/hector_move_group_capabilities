@@ -1,0 +1,22 @@
+<library path="libhector_move_group_capabilities">
+
+<!--  <class name="move_group/OctomapRaycastCapability" type="move_group::OctomapRaycastCapability" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Provides API for raycasting into Octomap data of the planning scene
+    </description>
+  </class>  -->
+  
+  <class name="occupancy_map_monitor/LazyPointCloudOctomapUpdater" type="occupancy_map_monitor::LazyPointCloudOctomapUpdater" base_class_type="occupancy_map_monitor::OccupancyMapUpdater">
+    <description>
+    </description>
+  </class>
+  
+  <!--
+  <class name="move_group/OctomapManagementCapability" type="move_group::OctomapManagementCapability" base_class_type="move_group::MoveGroupCapability">
+    <description>
+      Provides API for reseting and loading of Octomap data for planning scene
+    </description>
+  </class>
+  -->
+
+</library>

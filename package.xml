@@ -13,6 +13,7 @@
   <build_depend>hector_nav_msgs</build_depend>
   <build_depend>moveit_msgs</build_depend>
   <build_depend>moveit_ros_move_group</build_depend>
+  <build_depend>moveit_ros_perception</build_depend>
   <build_depend>octomap_msgs</build_depend>
   <build_depend>octomap_ros</build_depend>
   <build_depend>pluginlib</build_depend>
@@ -24,6 +25,7 @@
   <run_depend>hector_nav_msgs</run_depend>
   <run_depend>moveit_msgs</run_depend>
   <run_depend>moveit_ros_move_group</run_depend>
+  <run_depend>moveit_ros_perception</run_depend>
   <run_depend>octomap_msgs</run_depend>
   <run_depend>octomap_ros</run_depend>
   <run_depend>pluginlib</run_depend>
@@ -36,5 +38,6 @@
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <moveit_ros_move_group plugin="${prefix}/hector_move_group_plugins_description.xml"/>
+    <moveit_ros_perception plugin="${prefix}/hector_moveit_perception_plugins_description.xml"/>
   </export>
 </package>
