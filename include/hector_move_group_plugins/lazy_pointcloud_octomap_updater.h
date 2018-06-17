@@ -77,6 +77,7 @@ private:
   boost::shared_ptr<tf::Transformer> tf_;
 
   ros::Time last_update_time_;
+  ros::Time last_octomap_update_time_;
 
   /* params */
   std::string point_cloud_topic_;
@@ -94,6 +95,8 @@ private:
   /* used to store all cells in the map which a given ray passes through during raycasting.
      we cache this here because it dynamically pre-allocates a lot of memory in its contsructor */
   octomap::KeyRay key_ray_;
+  
+  octomap::KeySet free_cells, occupied_cells, model_cells;
 
   std::unique_ptr<point_containment_filter::ShapeMask> shape_mask_;
   std::vector<int> mask_;

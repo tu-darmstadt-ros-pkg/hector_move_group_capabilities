@@ -108,7 +108,7 @@ void LazyPointCloudOctomapUpdater::start()
   if (point_cloud_subscriber_)
     return;
   /* subscribe to point cloud topic using tf filter*/
-  point_cloud_subscriber_ = new message_filters::Subscriber<sensor_msgs::PointCloud2>(root_nh_, point_cloud_topic_, 5);
+  point_cloud_subscriber_ = new message_filters::Subscriber<sensor_msgs::PointCloud2>(root_nh_, point_cloud_topic_, 1);
   if (tf_ && !monitor_->getMapFrame().empty())
   {
     point_cloud_filter_ =
@@ -226,7 +226,8 @@ void LazyPointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointClou
   
   ros::WallTime filter_time = ros::WallTime::now();
 
-  octomap::KeySet free_cells, occupied_cells, model_cells, clip_cells;
+  //octomap::KeySet free_cells, occupied_cells, model_cells, clip_cells;
+  octomap::KeySet clip_cells;
   std::unique_ptr<sensor_msgs::PointCloud2> filtered_cloud;
 
   // We only use these iterators if we are creating a filtered_cloud for
@@ -300,11 +301,28 @@ void LazyPointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointClou
       }
     }
 
+    int count_ops = 0;
+    int count_uninit = 0;
     /* compute the free cells along each ray that ends at an occupied cell */
     for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; ++it)
-      if (tree_->computeRayKeys(sensor_origin, tree_->keyToCoord(*it), key_ray_))
-        free_cells.insert(key_ray_.begin(), key_ray_.end());
+      if (tree_->computeRayKeys(sensor_origin, tree_->keyToCoord(*it), key_ray_)){
+        for (octomap::KeyRay::iterator it_ray = key_ray_.begin(), end = key_ray_.end(); it_ray != end; ++it_ray){
+          auto node = tree_->search(*it_ray);
 
+          count_ops++;
+
+          if (!node){// || node->getLogOdds() > 0)
+            free_cells.insert(*it_ray);
+            count_uninit++;
+          }else{
+
+          }
+        }
+
+
+
+      }
+    ROS_INFO("Count: %d, uninit: %d ", count_ops, count_uninit);
     /* compute the free cells along each ray that ends at a model cell */
     for (octomap::KeySet::iterator it = model_cells.begin(), end = model_cells.end(); it != end; ++it)
       if (tree_->computeRayKeys(sensor_origin, tree_->keyToCoord(*it), key_ray_))
@@ -333,28 +351,72 @@ void LazyPointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointClou
   for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; ++it)
     free_cells.erase(*it);
 
-  tree_->lockWrite();
-
-  try
+  ROS_INFO ("Sizes: free: %d occupied: %d model: %d", free_cells.size(), occupied_cells.size(), model_cells.size());
+  
+  if (cloud_msg->header.stamp > last_octomap_update_time_ + ros::Duration(4.0))
   {
-    /* mark free cells only if not seen occupied in this cloud */
-    for (octomap::KeySet::iterator it = free_cells.begin(), end = free_cells.end(); it != end; ++it)
-      tree_->updateNode(*it, false);
+    tree_->lockWrite();
+    
 
-    /* now mark all occupied cells */
-    for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; ++it)
-      tree_->updateNode(*it, true);
+    bool lazy_eval = false;
+    try
+    {
+      /* mark free cells only if not seen occupied in this cloud */
+      ros::WallTime free_start_time = ros::WallTime::now();
+      int update_count = 0;
+      for (octomap::KeySet::iterator it = free_cells.begin(), end = free_cells.end(); it != end; ++it){
+        if (update_count < 50000){
+          auto node = tree_->search(*it);
 
-    // set the logodds to the minimum for the cells that are part of the model
-    const float lg = tree_->getClampingThresMinLog() - tree_->getClampingThresMaxLog();
-    for (octomap::KeySet::iterator it = model_cells.begin(), end = model_cells.end(); it != end; ++it)
-      tree_->updateNode(*it, lg);
+          if (!node || node->getLogOdds() > 0)
+            tree_->updateNode(*it, false, lazy_eval);
+
+          update_count++;
+        }else{
+          break;
+        }
+      }
+      ROS_INFO("Free space update took %lf ms for %d updates.",
+               (ros::WallTime::now() - free_start_time).toSec() * 1000.0,
+               update_count);
+
+      ros::WallTime free_end_time = ros::WallTime::now();
+
+      /* now mark all occupied cells */
+      for (octomap::KeySet::iterator it = occupied_cells.begin(), end = occupied_cells.end(); it != end; ++it)
+        tree_->updateNode(*it, true, lazy_eval);
+
+      // set the logodds to the minimum for the cells that are part of the model
+      const float lg = tree_->getClampingThresMinLog() - tree_->getClampingThresMaxLog();
+      for (octomap::KeySet::iterator it = model_cells.begin(), end = model_cells.end(); it != end; ++it)
+        tree_->updateNode(*it, lg, lazy_eval);
+      
+      //ros::WallTime update_inner_start_time = ros::WallTime::now();
+      if (lazy_eval)
+        tree_->updateInnerOccupancy();
+
+      ROS_INFO("Free space update took %lf ms. ",
+               (free_end_time - free_start_time).toSec() * 1000.0);
+               //(ros::WallTime::now() - free_start_time).toSec() * 1000.0);
+    }
+    catch (...)
+    {
+      ROS_ERROR("Internal error while updating octree");
+    }
+    
+    last_octomap_update_time_ = cloud_msg->header.stamp;
+
+    //free_cells.clear();
+    //occupied_cells.clear();
+    //model_cells.clear();
+    free_cells = octomap::KeySet();
+    occupied_cells = octomap::KeySet();
+    model_cells = octomap::KeySet();
+
+    
+    tree_->unlockWrite();
+  
   }
-  catch (...)
-  {
-    ROS_ERROR("Internal error while updating octree");
-  }
-  tree_->unlockWrite();
   ROS_INFO("Processed point cloud in %lf ms. Filtering took %lf ms. Keyset took %lf ms",
            (ros::WallTime::now() - start).toSec() * 1000.0,
            (filter_time - start).toSec() * 1000.0,
