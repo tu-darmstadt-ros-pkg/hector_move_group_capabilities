@@ -77,8 +77,12 @@ bool LazyPointCloudOctomapUpdater::setParams(XmlRpc::XmlRpcValue& params)
     readXmlParam(params, "point_subsample", &point_subsample_);
     if (params.hasMember("max_update_rate"))
       readXmlParam(params, "max_update_rate", &max_update_rate_);
-    if (params.hasMember("filtered_cloud_topic"))
+    if (params.hasMember("filtered_cloud_topic")){
       filtered_cloud_topic_ = static_cast<const std::string&>(params["filtered_cloud_topic"]);
+      ROS_INFO("Publishing filtered cloud to %s", filtered_cloud_topic_.c_str());   
+    }else{
+      ROS_INFO("No filtered cloud topic given, not publishing filtered cloud.");   
+    }
   }
   catch (XmlRpc::XmlRpcException& ex)
   {
@@ -219,6 +223,8 @@ void LazyPointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointClou
   /* mask out points on the robot */
   shape_mask_->maskContainment(*cloud_msg, sensor_origin_eigen, 0.0, max_range_, mask_);
   updateMask(*cloud_msg, sensor_origin_eigen, mask_);
+  
+  ros::WallTime filter_time = ros::WallTime::now();
 
   octomap::KeySet free_cells, occupied_cells, model_cells, clip_cells;
   std::unique_ptr<sensor_msgs::PointCloud2> filtered_cloud;
@@ -316,6 +322,8 @@ void LazyPointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointClou
   }
 
   tree_->unlockRead();
+  
+  ros::WallTime keyset_end_time = ros::WallTime::now();
 
   /* cells that overlap with the model are not occupied */
   for (octomap::KeySet::iterator it = model_cells.begin(), end = model_cells.end(); it != end; ++it)
@@ -347,7 +355,11 @@ void LazyPointCloudOctomapUpdater::cloudMsgCallback(const sensor_msgs::PointClou
     ROS_ERROR("Internal error while updating octree");
   }
   tree_->unlockWrite();
-  ROS_DEBUG("Processed point cloud in %lf ms", (ros::WallTime::now() - start).toSec() * 1000.0);
+  ROS_INFO("Processed point cloud in %lf ms. Filtering took %lf ms. Keyset took %lf ms",
+           (ros::WallTime::now() - start).toSec() * 1000.0,
+           (filter_time - start).toSec() * 1000.0,
+           (keyset_end_time - filter_time).toSec() * 1000.0
+          );
   tree_->triggerUpdateCallback();
 
   if (filtered_cloud)
