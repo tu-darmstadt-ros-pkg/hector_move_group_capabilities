@@ -86,25 +86,30 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
 {
 
   ROS_DEBUG("Octomap distance lookup service called");
-  tf::StampedTransform camera_transform;
+  geometry_msgs::TransformStamped camera_transform;
 
   const std::string target_frame = context_->planning_scene_monitor_->getPlanningScene()->getPlanningFrame();
 
   try{
-    tf_->waitForTransform(target_frame ,req.point.header.frame_id, req.point.header.stamp, ros::Duration(1.0));
-    tf_->lookupTransform(target_frame, req.point.header.frame_id, req.point.header.stamp, camera_transform);
-  }catch(tf::TransformException e){
+    camera_transform = tf_->lookupTransform(target_frame, req.point.header.frame_id, req.point.header.stamp, ros::Duration(1.0));
+  }catch(tf2::TransformException& e){
     ROS_ERROR("Transform failed in lookup distance service call: %s",e.what());
     return false;
   }
 
   bool useOutliers = true;
 
+  tf2::Transform camera_transform_tf;
+  tf2::fromMsg(camera_transform.transform, camera_transform_tf); 	
+  
+  tf::Vector3 camera_translation;
+  tf::vector3MsgToTF(camera_transform.transform.translation, camera_translation);
 
-  const octomap::point3d origin = octomap::pointTfToOctomap(camera_transform.getOrigin());
+  const octomap::point3d origin = octomap::pointTfToOctomap(camera_translation);
 
-  tf::Point end_point = camera_transform * tf::Point(req.point.point.x, req.point.point.y, req.point.point.z);
-  tf::Vector3 direction = end_point - camera_transform.getOrigin();
+  tf2::Vector3 end_point = camera_transform_tf * tf2::Vector3(req.point.point.x, req.point.point.y, req.point.point.z);
+  tf2::Vector3 direction_tf2 = end_point - camera_transform_tf.getOrigin();
+  tf::Vector3 direction(direction_tf2.x(), direction_tf2.y(), direction_tf2.z());
 
   const octomap::point3d directionOc = octomap::pointTfToOctomap(direction);
   std::vector<octomap::point3d> endPoints;
@@ -250,5 +255,5 @@ void move_group::OctomapRaycastCapability::get_endpoints(const octomap::point3d&
     */
 }
 
-#include <class_loader/class_loader.h>
+#include <class_loader/class_loader.hpp>
 CLASS_LOADER_REGISTER_CLASS(move_group::OctomapRaycastCapability, move_group::MoveGroupCapability)

@@ -37,6 +37,8 @@
 
 #include <moveit/move_group/move_group_capability.h>
 
+#include <tf/transform_datatypes.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <hector_nav_msgs/GetDistanceToObstacle.h>
 
@@ -91,7 +93,7 @@ private:
   ros::CallbackQueue service_queue_;
   boost::thread service_thread_;
 
-  boost::shared_ptr<tf::Transformer> tf_;
+  std::shared_ptr<tf2_ros::Buffer> tf_;
 
   double octo_min_distance_;
   double octo_max_distance_;
