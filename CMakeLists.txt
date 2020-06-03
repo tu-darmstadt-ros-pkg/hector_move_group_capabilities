@@ -24,7 +24,7 @@ generate_dynamic_reconfigure_options(cfg/OctomapRaycastCapability.cfg)
 
 catkin_package(
   INCLUDE_DIRS include
-#  LIBRARIES vigir_move_group
+  LIBRARIES hector_move_group_capabilities
 #  CATKIN_DEPENDS cmake_modules geometry_msgs moveit_msgs moveit_ros_move_group pluginlib roscpp
 #  DEPENDS system_lib
 )
@@ -45,7 +45,7 @@ add_library(hector_move_group_capabilities
 
 target_link_libraries(hector_move_group_capabilities ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-add_dependencies(hector_move_group_capabilities ${catkin_EXPORTED_TARGETS})
+add_dependencies(hector_move_group_capabilities ${catkin_EXPORTED_TARGETS} ${PROJECT_NAME}_gencfg)
 
 install(TARGETS hector_move_group_capabilities
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
