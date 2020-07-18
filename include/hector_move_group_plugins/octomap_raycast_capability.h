@@ -36,6 +36,7 @@
 #define MOVEIT_MOVE_GROUP_OCTOMAP_RAYCAST_CAPABILITY_
 
 #include <moveit/move_group/move_group_capability.h>
+#include <moveit/collision_detection/collision_env.h>
 
 #include <tf/transform_datatypes.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>

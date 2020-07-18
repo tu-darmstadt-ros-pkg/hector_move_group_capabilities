@@ -124,7 +124,7 @@ bool move_group::OctomapRaycastCapability::lookupServiceCallback(hector_nav_msgs
   // Below is inspired by
   // https://github.com/ros-planning/moveit_core/blob/jade-devel/planning_scene/src/planning_scene.cpp#L850
   // and quite hacky. There should be a better way to access the octomap (at least read-only)?
-  collision_detection::CollisionWorld::ObjectConstPtr map = ls.getPlanningSceneMonitor()->getPlanningScene()->getWorld()->getObject("<octomap>");
+  collision_detection::CollisionEnv::ObjectConstPtr map = ls.getPlanningSceneMonitor()->getPlanningScene()->getWorld()->getObject("<octomap>");
   const shapes::OcTree* octree_shape = static_cast<const shapes::OcTree*>(map->shapes_[0].get());
   const std::shared_ptr<const octomap::OcTree> octree_ = octree_shape->octree;
 
